@@ -143,20 +143,20 @@ class MakeupApplication:
 
         if results.multi_face_landmarks:
             for face_no, face_landmarks in enumerate(results.multi_face_landmarks):
-                left_eye_landmarks = [face_landmarks.landmark[idx] for idx in self.LEFT_EYE_INDEXES]
-                left_eyebrow_landmarks = [face_landmarks.landmark[idx] for idx in self.LEFT_EYEBROW_INDEXES]
-                upper_left_eye_coordinates = self.get_upper_side_coordinates(left_eye_landmarks)
-                lower_left_eyebrow = self.get_lower_side_coordinates(left_eyebrow_landmarks)
-                frame = self.apply_eyeshadow(frame, upper_left_eye_coordinates, lower_left_eyebrow, (170, 80, 160))
+                # left_eye_landmarks = [face_landmarks.landmark[idx] for idx in self.LEFT_EYE_INDEXES]
+                # left_eyebrow_landmarks = [face_landmarks.landmark[idx] for idx in self.LEFT_EYEBROW_INDEXES]
+                # upper_left_eye_coordinates = self.get_upper_side_coordinates(left_eye_landmarks)
+                # lower_left_eyebrow = self.get_lower_side_coordinates(left_eyebrow_landmarks)
+                # frame = self.apply_eyeshadow(frame, upper_left_eye_coordinates, lower_left_eyebrow, (170, 80, 160))
 
-                right_eye_landmarks = [face_landmarks.landmark[idx] for idx in self.RIGHT_EYE_INDEXES]
-                right_eyebrow_landmarks = [face_landmarks.landmark[idx] for idx in self.RIGHT_EYEBROW_INDEXES]
-                upper_right_eye_coordinates = self.get_upper_side_coordinates(right_eye_landmarks)
-                lower_right_eyebrow = self.get_lower_side_coordinates(right_eyebrow_landmarks)
-                frame = self.apply_eyeshadow(frame, upper_right_eye_coordinates, lower_right_eyebrow, (170, 80, 160))
+                # right_eye_landmarks = [face_landmarks.landmark[idx] for idx in self.RIGHT_EYE_INDEXES]
+                # right_eyebrow_landmarks = [face_landmarks.landmark[idx] for idx in self.RIGHT_EYEBROW_INDEXES]
+                # upper_right_eye_coordinates = self.get_upper_side_coordinates(right_eye_landmarks)
+                # lower_right_eyebrow = self.get_lower_side_coordinates(right_eyebrow_landmarks)
+                # frame = self.apply_eyeshadow(frame, upper_right_eye_coordinates, lower_right_eyebrow, (170, 80, 160))
 
-                frame = self.draw_eyeliner(frame, upper_left_eye_coordinates)
-                frame = self.draw_eyeliner(frame, upper_right_eye_coordinates)
+                # frame = self.draw_eyeliner(frame, upper_left_eye_coordinates)
+                # frame = self.draw_eyeliner(frame, upper_right_eye_coordinates)
 
                 frame = self.apply_lipstick(frame, face_landmarks.landmark, self.LIPS_INDEXES, (0, 0, 255))
 
