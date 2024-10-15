@@ -77,7 +77,7 @@ class MakeupApplication:
         final_image = np.where(boundary_mask[..., np.newaxis] == 0, image, lips_with_gradient)
         return final_image
 
-    def draw_eyeliner(self, image, upper_eye_coordinates, color=(14, 14, 18), thickness=1):
+    def draw_eyeliner(self, image, upper_eye_coordinates, color=(14, 14, 18), thickness=2):
         result_image = image.copy()
 
         eyeliner_points = [(int(landmark.x * image.shape[1]), int(landmark.y * image.shape[0])) for landmark in upper_eye_coordinates]
@@ -151,9 +151,13 @@ class MakeupApplication:
                 upper_right_eye_coordinates = self.get_upper_side_coordinates(right_eye_landmarks)
                 lower_right_eyebrow = self.get_lower_side_coordinates(right_eyebrow_landmarks)
                 frame = self.apply_eyeshadow(frame, upper_right_eye_coordinates, lower_right_eyebrow, (170, 80, 160))
+                Lower_left_eye_coordinates = self.get_lower_side_coordinates(left_eye_landmarks)
+                Lower_right_eye_coordinates=self.get_lower_side_coordinates(right_eye_landmarks)
 
                 frame = self.draw_eyeliner(frame, upper_left_eye_coordinates)
                 frame = self.draw_eyeliner(frame, upper_right_eye_coordinates)
+                frame = self.draw_eyeliner(frame, Lower_left_eye_coordinates)
+                frame = self.draw_eyeliner(frame,  Lower_right_eye_coordinates)
 
                 frame = self.apply_lipstick(frame, face_landmarks.landmark, self.LIPS_INDEXES, (0, 0, 255))
                 left_cheek_indices = [436,425,280, 352, 411, 427]
