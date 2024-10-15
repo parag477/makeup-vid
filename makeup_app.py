@@ -93,47 +93,44 @@ class MakeupApplication:
 
         return result_image
 
-    def apply_blush(self, image, face_landmarks, cheek_indices, chin_index, color=(128, 0, 128), intensity=0.6, size_multiplier=1.0):
-        result_image = image.copy()
-        img_height, img_width = image.shape[:2]
-
-        def get_coords(index):
-            landmark = face_landmarks.landmark[index]
-            return np.array([int(landmark.x * img_width), int(landmark.y * img_height)])
-
-        def compute_blush_parameters(cheek_idx, chin_idx):
-            cheek_coords = get_coords(cheek_idx)
-            chin_coords = get_coords(chin_idx)
-
-            center_coords = cheek_coords + 0.3 * (chin_coords - cheek_coords)
-            center_coords = center_coords.astype(int)
-
-            distance = np.linalg.norm(cheek_coords - chin_coords)
-            axes_length = (int(distance * 0.6 * size_multiplier), int(distance * 0.3 * size_multiplier))
-
-            y_min = max(center_coords[1] - axes_length[1], cheek_coords[1] - 20)
-            y_max = min(center_coords[1] + axes_length[1], chin_coords[1] - 20)
-            axes_length = (axes_length[0], (y_max - y_min) // 2)
-            center_coords[1] = (y_min + y_max) // 2
-
-            return center_coords, axes_length
-
-        left_center, left_axes = compute_blush_parameters(cheek_indices[0], chin_index)
-        right_center, right_axes = compute_blush_parameters(cheek_indices[1], chin_index)
-
-        blush_mask = np.zeros((img_height, img_width), dtype=np.uint8)
-        cv2.ellipse(blush_mask, tuple(left_center), left_axes, 0, 0, 360, 255, -1)
-        cv2.ellipse(blush_mask, tuple(right_center), right_axes, 0, 0, 360, 255, -1)
-
-        blurred_mask = cv2.GaussianBlur(blush_mask, (99, 99), 0)
-        normalized_mask = blurred_mask / 255.0
-        normalized_mask = normalized_mask[..., np.newaxis]
-
-        blush_color_image = np.full_like(image, color)
-
-        blended_image = (image * (1 - normalized_mask * intensity) + blush_color_image * (normalized_mask * intensity)).astype(np.uint8)
-
-        return blended_image
+    def apply_blush(self, frame, left_cheek_indices, right_cheek_indices, color=(130,119, 255), alpha=0.4):
+        # Convert the frame to RGB for processing
+        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        result = self.face_mesh.process(rgb_frame) 
+        
+        if result.multi_face_landmarks:
+            for face_landmarks in result.multi_face_landmarks:
+                h, w, _ = frame.shape
+                
+                # Get coordinates for left cheek
+                left_cheek_points = np.array([
+                    [
+                        int(face_landmarks.landmark[idx].x * w),
+                        int(face_landmarks.landmark[idx].y * h)
+                    ]
+                    for idx in left_cheek_indices
+                ], np.int32)
+    
+                # Get coordinates for right cheek
+                right_cheek_points = np.array([
+                    [
+                        int(face_landmarks.landmark[idx].x * w),
+                        int(face_landmarks.landmark[idx].y * h)
+                    ]
+                    for idx in right_cheek_indices
+                ], np.int32)
+    
+                # Create a mask for both cheeks
+                mask = np.zeros_like(frame, dtype=np.uint8)
+    
+                # Fill polygons on the mask for both cheeks
+                cv2.fillPoly(mask, [left_cheek_points], color)
+                cv2.fillPoly(mask, [right_cheek_points], color)
+    
+                # Blend the mask with the original image
+                frame = cv2.addWeighted(mask, alpha, frame, 1 - alpha, 0)
+    
+        return frame
 
     def process_frame(self, frame):
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -143,27 +140,25 @@ class MakeupApplication:
 
         if results.multi_face_landmarks:
             for face_no, face_landmarks in enumerate(results.multi_face_landmarks):
-                # left_eye_landmarks = [face_landmarks.landmark[idx] for idx in self.LEFT_EYE_INDEXES]
-                # left_eyebrow_landmarks = [face_landmarks.landmark[idx] for idx in self.LEFT_EYEBROW_INDEXES]
-                # upper_left_eye_coordinates = self.get_upper_side_coordinates(left_eye_landmarks)
-                # lower_left_eyebrow = self.get_lower_side_coordinates(left_eyebrow_landmarks)
-                # frame = self.apply_eyeshadow(frame, upper_left_eye_coordinates, lower_left_eyebrow, (170, 80, 160))
+                left_eye_landmarks = [face_landmarks.landmark[idx] for idx in self.LEFT_EYE_INDEXES]
+                left_eyebrow_landmarks = [face_landmarks.landmark[idx] for idx in self.LEFT_EYEBROW_INDEXES]
+                upper_left_eye_coordinates = self.get_upper_side_coordinates(left_eye_landmarks)
+                lower_left_eyebrow = self.get_lower_side_coordinates(left_eyebrow_landmarks)
+                frame = self.apply_eyeshadow(frame, upper_left_eye_coordinates, lower_left_eyebrow, (170, 80, 160))
 
-                # right_eye_landmarks = [face_landmarks.landmark[idx] for idx in self.RIGHT_EYE_INDEXES]
-                # right_eyebrow_landmarks = [face_landmarks.landmark[idx] for idx in self.RIGHT_EYEBROW_INDEXES]
-                # upper_right_eye_coordinates = self.get_upper_side_coordinates(right_eye_landmarks)
-                # lower_right_eyebrow = self.get_lower_side_coordinates(right_eyebrow_landmarks)
-                # frame = self.apply_eyeshadow(frame, upper_right_eye_coordinates, lower_right_eyebrow, (170, 80, 160))
+                right_eye_landmarks = [face_landmarks.landmark[idx] for idx in self.RIGHT_EYE_INDEXES]
+                right_eyebrow_landmarks = [face_landmarks.landmark[idx] for idx in self.RIGHT_EYEBROW_INDEXES]
+                upper_right_eye_coordinates = self.get_upper_side_coordinates(right_eye_landmarks)
+                lower_right_eyebrow = self.get_lower_side_coordinates(right_eyebrow_landmarks)
+                frame = self.apply_eyeshadow(frame, upper_right_eye_coordinates, lower_right_eyebrow, (170, 80, 160))
 
-                # frame = self.draw_eyeliner(frame, upper_left_eye_coordinates)
-                # frame = self.draw_eyeliner(frame, upper_right_eye_coordinates)
+                frame = self.draw_eyeliner(frame, upper_left_eye_coordinates)
+                frame = self.draw_eyeliner(frame, upper_right_eye_coordinates)
 
                 frame = self.apply_lipstick(frame, face_landmarks.landmark, self.LIPS_INDEXES, (0, 0, 255))
-
-                cheek_indices = [234, 454]
-                chin_index = 152
-                # frame = self.apply_blush(frame, face_landmarks, cheek_indices, chin_index)
-
+                left_cheek_indices = [436,425,280, 352, 411, 427]
+                right_cheek_indices = [123, 50, 205, 216, 207,187]
+                frame = self.apply_blush(frame, left_cheek_indices, right_cheek_indices)
         return frame
 
     def start_video(self):
